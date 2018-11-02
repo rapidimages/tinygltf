@@ -1316,6 +1316,18 @@ static void swap4(unsigned int *val) {
 #endif
 }
 
+static std::string ToUNC(const std::string& path) {
+  std::string result = path;
+  if (result.substr(0,2) == "\\\\") {
+    result = result.substr(2);
+  }
+  else {
+    return result;
+  }
+  result = "\\\\?\\UNC\\" + result;
+  return result;
+}
+
 static std::string JoinPath(const std::string &path0,
                             const std::string &path1) {
   if (path0.empty()) {
@@ -1342,6 +1354,9 @@ static std::string FindFile(const std::vector<std::string> &paths,
   for (size_t i = 0; i < paths.size(); i++) {
     std::string absPath =
         fs->ExpandFilePath(JoinPath(paths[i], filepath), fs->user_data);
+#ifdef _WIN32
+    absPath = ToUNC(absPath);
+#endif
     if (fs->FileExists(absPath, fs->user_data)) {
       return absPath;
     }
