@@ -1325,6 +1325,14 @@ static std::string ToUNC(const std::string& path) {
     return result;
   }
   result = "\\\\?\\UNC\\" + result;
+
+  // TODO: IS it possible that UNC-paths disslike mixed back/forward slashes.
+  for(auto & c: result){
+    if (c == '/'){
+      c = '\\';
+    }
+  }
+
   return result;
 }
 
