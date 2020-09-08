@@ -7,6 +7,8 @@ If you are looking for old, C++03 version, please use `devel-picojson` branch.
 
 ## Status
 
+ - v2.4.0 Experimental RapidJSON support. Experimental C++14 support(C++14 may give better performance)
+ - v2.3.0 Modified Material representation according to glTF 2.0 schema(and introduced TextureInfo class)
  - v2.2.0 release(Support loading 16bit PNG. Sparse accessor support)
  - v2.1.0 release(Draco support)
  - v2.0.0 release(22 Aug, 2018)!
@@ -16,6 +18,8 @@ If you are looking for old, C++03 version, please use `devel-picojson` branch.
 [![Build Status](https://travis-ci.org/syoyo/tinygltf.svg?branch=devel)](https://travis-ci.org/syoyo/tinygltf)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/warngenu9wjjhlm8?svg=true)](https://ci.appveyor.com/project/syoyo/tinygltf)
+
+![C/C++ CI](https://github.com/syoyo/tinygltf/workflows/C/C++%20CI/badge.svg)
 
 ## Features
 
@@ -32,8 +36,11 @@ If you are looking for old, C++03 version, please use `devel-picojson` branch.
 * Moderate parsing time and memory consumption.
 * glTF specification v2.0.0
   * [x] ASCII glTF
+    * [x] Load
+    * [x] Save
   * [x] Binary glTF(GLB)
-  * [x] PBR material description
+    * [x] Load
+    * [x] Save(.bin embedded .glb)
 * Buffers
   * [x] Parse BASE64 encoded embedded buffer data(DataURI).
   * [x] Load `.bin` file.
@@ -53,6 +60,13 @@ If you are looking for old, C++03 version, please use `devel-picojson` branch.
   * [x] Image save
 * Extensions
   * [x] Draco mesh decoding
+  * [ ] Draco mesh encoding
+
+## Note on extension property
+
+In extension(`ExtensionMap`), JSON number value is parsed as int or float(number) and stored as `tinygltf::Value` object. If you want a floating point value from `tinygltf::Value`, use `GetNumberAsDouble()` method.
+
+`IsNumber()` returns true if the underlying value is an int value or a floating point value.
 
 ## Examples
 
@@ -67,6 +81,11 @@ If you are looking for old, C++03 version, please use `devel-picojson` branch.
 * GLTF loader plugin for OGRE 2.1. Support for PBR materials via HLMS/PBS https://github.com/Ybalrid/Ogre_glTF
 * [TinyGltfImporter](http://doc.magnum.graphics/magnum/classMagnum_1_1Trade_1_1TinyGltfImporter.html) plugin for [Magnum](https://github.com/mosra/magnum), a lightweight and modular C++11/C++14 graphics middleware for games and data visualization.
 * [Diligent Engine](https://github.com/DiligentGraphics/DiligentEngine) - A modern cross-platform low-level graphics library and rendering framework
+* Lighthouse 2: a rendering framework for real-time ray tracing / path tracing experiments. https://github.com/jbikker/lighthouse2
+* [QuickLook GLTF](https://github.com/toshiks/glTF-quicklook) - quicklook plugin for macos. Also SceneKit wrapper for tinygltf.
+* [GlslViewer](https://github.com/patriciogonzalezvivo/glslViewer) - live GLSL coding for MacOS and Linux
+* [Vulkan-Samples](https://github.com/KhronosGroup/Vulkan-Samples) - The Vulkan Samples is collection of resources to help you develop optimized Vulkan applications.
+* [TDME2](https://github.com/andreasdr/tdme2) - TDME2 - ThreeDeeMiniEngine2 is a lightweight 3D engine including tools suited for 3D game development using C++11
 * Your projects here! (Please send PR)
 
 ## TODOs
@@ -76,7 +95,7 @@ If you are looking for old, C++03 version, please use `devel-picojson` branch.
   * [x] Load Draco compressed mesh
   * [ ] Save Draco compressed mesh
   * [ ] Open3DGC?
-* [ ] Support `extensions` and `extras` property
+* [x] Support `extensions` and `extras` property
 * [ ] HDR image?
   * [ ] OpenEXR extension through TinyEXR.
 * [ ] 16bit PNG support in Serialization
@@ -143,17 +162,22 @@ if (!ret) {
 * `TINYGLTF_NO_INCLUDE_JSON `: Disable including `json.hpp` from within `tiny_gltf.h` because it has been already included before or you want to include it using custom path before including `tiny_gltf.h`.
 * `TINYGLTF_NO_INCLUDE_STB_IMAGE `: Disable including `stb_image.h` from within `tiny_gltf.h` because it has been already included before or you want to include it using custom path before including `tiny_gltf.h`.
 * `TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE `: Disable including `stb_image_write.h` from within `tiny_gltf.h` because it has been already included before or you want to include it using custom path before including `tiny_gltf.h`.
+* `TINYGLTF_USE_RAPIDJSON` : Use RapidJSON as a JSON parser/serializer. RapidJSON files are not included in TinyGLTF repo. Please set an include path to RapidJSON if you enable this featrure.
+* `TINYGLTF_USE_CPP14` : Use C++14 feature(requires C++14 compiler). This may give better performance than C++11.
 
 
 ### Saving gltTF 2.0 model
-* [ ] Buffers.
+
+* Buffers.
   * [x] To file
   * [x] Embedded
   * [ ] Draco compressed?
 * [x] Images
   * [x] To file
   * [x] Embedded
-* [ ] Binary(.glb)
+* Binary(.glb)
+  * [x] .bin embedded single .glb
+  * [ ] External .bin
 
 ## Running tests.
 
@@ -181,8 +205,17 @@ $ ./tester
 $ ./tester_noexcept
 ```
 
+### Fuzzing tests
+
+See `tests/fuzzer` for details.
+
+After running fuzzer on Ryzen9 3950X a week, at least `LoadASCIIFromString` looks safe except for out-of-memory error in Fuzzer.
+We may be better to introduce bounded memory size checking when parsing glTF data.
+
 ## Third party licenses
 
 * json.hpp : Licensed under the MIT License <http://opensource.org/licenses/MIT>. Copyright (c) 2013-2017 Niels Lohmann <http://nlohmann.me>.
 * stb_image : Public domain.
 * catch : Copyright (c) 2012 Two Blue Cubes Ltd. All rights reserved. Distributed under the Boost Software License, Version 1.0.
+* RapidJSON : Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights reserved. http://rapidjson.org/
+* dlib(uridecode, uriencode) : Copyright (C) 2003  Davis E. King Boost Software License 1.0. http://dlib.net/dlib/server/server_http.cpp.html
