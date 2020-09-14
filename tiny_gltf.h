@@ -7223,7 +7223,10 @@ static void SerializeGltfModel(Model *model, json &o) {
     json materials;
     JsonReserveArray(materials, model->materials.size());
     for (unsigned int i = 0; i < model->materials.size(); ++i) {
-      json material;
+      // BEGIN RAPIDIMAGES ADDITION
+      // materials that are purely default end up as null unless initializing them to json::object
+      json material = json::object();
+      // END RAPIDIMAGES ADDITION
       SerializeGltfMaterial(model->materials[i], material);
       JsonPushBack(materials, std::move(material));
     }
